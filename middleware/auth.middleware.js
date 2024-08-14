@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const userService = require('../services/user.service');
 
 module.exports.verifyToken = async (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1]; // Bearer <token>
@@ -11,11 +11,12 @@ module.exports.verifyToken = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded; // Attach user info to the request
-        const user = await User.findByPk(req.user.id);
+        const user = await userService.findUserById(req.user.id);
         if (!user) return res.status(401).json({ message: 'Invalid token' });
 
         next();
     } catch (error) {
+        console.log(error);
         return res.status(401).json({ message: 'Invalid token' });
     }
 };

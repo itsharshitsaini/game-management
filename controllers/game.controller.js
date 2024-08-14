@@ -1,55 +1,59 @@
-const Game = require('../models/game.model');
+const gameService = require('../services/game.service');
 
-// Create Game
-exports.createGame = async (req, res) => {
+exports.createGame = async (req, res, next) => {
     try {
-        const game = await Game.create(req.body);
+        const game = await gameService.createGame(req.body);
         res.status(201).send(game);
     } catch (err) {
-        res.status(500).send({ message: 'Error creating game.' });
+        next(err);
     }
 };
 
-// Get All Games
-exports.getAllGames = async (req, res) => {
+
+exports.getAllGames = async (req, res, next) => {
     try {
-        const games = await Game.findAll();
+        const games = await gameService.getAllGames();
         res.send(games);
     } catch (err) {
-        res.status(500).send({ message: 'Error fetching games.' });
+        next(err);
     }
 };
 
-// Get Game by ID
-exports.getGameById = async (req, res) => {
+exports.getGameById = async (req, res, next) => {
     try {
-        const game = await Game.findByPk(req.params.id);
+        const game = await gameService.getGameById(req.params.id);
         if (!game) return res.status(404).send({ message: 'Game not found.' });
         res.send(game);
     } catch (err) {
-        res.status(500).send({ message: 'Error fetching game.' });
+        next(err);
     }
 };
 
-// Update Game
-exports.updateGame = async (req, res) => {
+
+exports.updateGame = async (req, res, next) => {
     try {
-        const [updated] = await Game.update(req.body, { where: { id: req.params.id } });
-        if (!updated) return res.status(404).send({ message: 'Game not found.' });
-        const game = await Game.findByPk(req.params.id);
+        const game = await gameService.updateGame(req.params.id, req.body);
         res.send(game);
     } catch (err) {
-        res.status(500).send({ message: 'Error updating game.' });
+        next(err);
     }
 };
 
-// Delete Game
-exports.deleteGame = async (req, res) => {
+
+exports.deleteGame = async (req, res, next) => {
     try {
-        const deleted = await Game.destroy({ where: { id: req.params.id } });
-        if (!deleted) return res.status(404).send({ message: 'Game not found.' });
-        res.status(204).send();
+        const game = await gameService.getGameById(req.params.id);
+
+        if (!game) {
+            const error = new Error('Game not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        await gameService.deleteGame(req.params.id);
+        res.status(200).send({ message: 'Game successfully deleted.' });
     } catch (err) {
-        res.status(500).send({ message: 'Error deleting game.' });
+        next(err);
     }
 };
+

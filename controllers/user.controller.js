@@ -1,37 +1,49 @@
-const User = require('../models/user.model');
+const userService = require('../services/user.service');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Register
-exports.register = async (req, res) => {
-    const { username, email, password, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+
+exports.register = async (req, res, next) => {
     try {
-        const user = await User.create({ username, email, password: hashedPassword, role });
+        const { username, email, password, role } = req.body;
+        console.log(req.body);
+        const user = await userService.createUser({ username, email, password, role });
         res.status(201).send(user);
     } catch (err) {
-        res.status(500).send({ message: 'Error registering user.' });
+        next(err);
     }
 };
 
-// Login
-exports.login = async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user || !await bcrypt.compare(password, user.password)) {
-        return res.status(400).send({ message: 'Invalid email or password.' });
-    }
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.send({ token });
-};
-
-// Get Profile
-exports.getProfile = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id);
-        if (!user) return res.status(404).send({ message: 'User not found.' });
+        const { email, password } = req.body;
+        const user = await userService.findUserByEmail(email);
+
+        if (!user || !await bcrypt.compare(password, user.password)) {
+            const error = new Error('Invalid email or password.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.send({ token });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getProfile = async (req, res, next) => {
+    try {
+        const user = await userService.findUserById(req.user.id);
+
+        if (!user) {
+            const error = new Error('User not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
         res.send(user);
     } catch (err) {
-        res.status(500).send({ message: 'Error fetching user profile.' });
+        next(err);
     }
 };

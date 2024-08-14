@@ -1,24 +1,36 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db.config');
-const User = require('./user.model');
-const Game = require('./game.model');
 
-const Score = sequelize.define('Score', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    score: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }
-}, {
-    timestamps: true,
-    createdAt: 'createdAt'
-});
+module.exports = (sequelize) => {
+    const Score = sequelize.define('Score', {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        score: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        userId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Users',
+                key: 'id',
+            },
+        },
+        gameId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Games',
+                key: 'id',
+            },
+        },
+    }, {
+        timestamps: true,
+        updatedAt: false,
+    });
 
-Score.belongsTo(User, { foreignKey: 'userId' });
-Score.belongsTo(Game, { foreignKey: 'gameId' });
-
-module.exports = Score;
+    return Score;
+};
